@@ -59,25 +59,25 @@
 
 ```bash
 pip install -r requirements.txt
-'''
+```
 
 
-
+---
 
 ## .env 파일 생성
 
 BLOCKCYPHER_TOKEN=your_api_token
 
-
+---
 ## Streamlit 실행
 
 streamlit run main.py
 
 
-
 ---
 
 ## 📂 프로젝트 구조
+
 btc_anomaly_free/
 ├── main.py                    # Streamlit 진입점
 ├── fetch_data.py              # API 연결
@@ -90,7 +90,10 @@ btc_anomaly_free/
 ├── requirements.txt
 └── README.md
 
+---
+
 ## 📫 문의 및 기여
+
 이 도구는 고려대학교 정보보호학과 연구 목적과 학술 활용을 위해 제작되었습니다.
 기여를 원하시는 분은 이슈를 남겨주세요.
 
