@@ -94,10 +94,7 @@ with st.expander("📘 도구 설명 및 한계 보기"):
 with st.expander("🛡 블랙리스트 출처 보기"):
     st.markdown("""
 - OFAC (미국 재무부 제재 주소)
-- TRM Labs Threat Intelligence
 - 김수키 관련 북한 연계 해커 조직 주소
-- WannaCry 랜섬웨어 수익 주소
-- Darknet Marketplace 관련 주소
     """)
 
 sanctioned = load_sanctioned_addresses()
