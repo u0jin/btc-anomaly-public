@@ -1,4 +1,4 @@
-# Streamlit 전체 코드 – 해석 메시지 개선 + 전처리 설명 강화 버전
+# Streamlit 전체 코드 – 레이더 차트 포함 최종 시각화 버전
 
 import streamlit as st
 import plotly.graph_objects as go
@@ -38,6 +38,28 @@ def plot_score_bars(scores: dict):
         xaxis=dict(title="점수 (0~25)", range=[0, 25]),
         yaxis=dict(title=""),
         height=400
+    )
+    return fig
+
+# 레이더 차트
+def plot_radar_chart(scores: dict):
+    categories = list(scores.keys())
+    values = list(scores.values())
+    values += values[:1]
+    fig = go.Figure()
+    fig.add_trace(go.Scatterpolar(
+        r=values,
+        theta=categories + [categories[0]],
+        fill='toself',
+        name='위험 점수'
+    ))
+    fig.update_layout(
+        polar=dict(
+            radialaxis=dict(visible=True, range=[0, 25])
+        ),
+        showlegend=False,
+        height=450,
+        title="📡 위험 항목별 정량 구성 (레이더 차트)"
     )
     return fig
 
@@ -185,7 +207,7 @@ if st.button("🔍 거래 흐름 분석 시작"):
             st.metric("📌 참고용 위험 점수", f"{total_score} / 100")
             st.caption("※ 본 점수는 정량 기준 기반 탐지 결과로, 거래 맥락에 따라 실제 해석이 달라질 수 있습니다.")
 
-            # 해석 메시지 (점수 기반)
+            # 해석 메시지
             if total_score <= 30:
                 st.success("✔️ 정량 기준 기반 분석 결과, 명확한 이상 패턴은 감지되지 않았습니다.")
                 st.caption("예시 흐름: 정기적 입출금, 일반 개인 지갑 사용 패턴 등")
@@ -199,15 +221,26 @@ if st.button("🔍 거래 흐름 분석 시작"):
                 st.caption("예시 흐름: 고액 집중, 간격 급변, burst 후 침묵 등 — 랜섬웨어 계열 가능성")
                 st.info("※ 총점이 70점을 초과하면 복수 항목에서 명확한 이상 패턴이 탐지 기준을 만족했음을 의미합니다.")
 
-            # 시각화
+            # 막대그래프
             st.subheader("📶 항목별 점수 비교 그래프")
-            st.caption("각 기준별 점수를 시각적으로 비교한 막대 그래프입니다.")
+            st.caption("각 기준별 점수를 수평 막대그래프로 비교합니다.")
             st.plotly_chart(plot_score_bars({
                 "고빈도": freq_score,
                 "고액 이상": amount_score,
                 "텀블러": tumbler_score,
                 "협박 사기": extortion_score
             }), use_container_width=True)
+
+            # 레이더 차트
+            st.subheader("🛰 위험 항목별 정량 구성 (레이더 차트)")
+            st.caption("분석 기준별 점수의 분포를 방사형으로 표현합니다. 특정 축이 클수록 해당 패턴과 유사도가 높음을 의미합니다.")
+            radar_fig = plot_radar_chart({
+                "고빈도": freq_score,
+                "고액 이상": amount_score,
+                "텀블러": tumbler_score,
+                "협박 사기": extortion_score
+            })
+            st.plotly_chart(radar_fig, use_container_width=True)
 
             # 시계열 시각화
             st.subheader("📈 고빈도 이상 시점 시계열")
