@@ -1,4 +1,4 @@
-# Streamlit UI 진입점
+# Streamlit 전체 코드 - 교수님 피드백 완전 반영 + 구조 정리 최종 버전
 
 import streamlit as st
 import plotly.express as px
@@ -21,14 +21,10 @@ from visualize import (
     plot_risk_scores
 )
 
-# ──────────────────────────────────────────────
 # 기본 설정
-# ──────────────────────────────────────────────
 st.set_page_config(page_title="Bitcoin Anomaly Detection Tool", layout="wide")
 
-# ──────────────────────────────────────────────
-# UI 스타일 개선 – 전문적이고 신뢰감 있는 디자인 적용
-# ──────────────────────────────────────────────
+# UI 스타일 설정
 st.markdown("""
 <style>
     html, body, .main, .block-container {
@@ -37,112 +33,55 @@ st.markdown("""
         font-family: 'Apple SD Gothic Neo', 'Roboto', sans-serif;
         font-size: 16px;
     }
-    .title {
-        font-size: 36px;
-        font-weight: 700;
-        color: #5e0000;
-        margin-top: 0.5em;
-    }
-    .subtitle {
-        font-size: 20px;
-        font-weight: 400;
-        color: #333333;
-    }
-    .badge {
-        font-size: 15px;
-        color: #777777;
-        margin-bottom: 20px;
-    }
-    a {
-        color: #5e0000;
-        font-weight: 500;
-    }
-    a:hover {
-        text-decoration: underline;
-    }
+    .title { font-size: 36px; font-weight: 700; color: #5e0000; margin-top: 0.5em; }
+    .subtitle { font-size: 20px; font-weight: 400; color: #333333; }
+    .badge { font-size: 15px; color: #777777; margin-bottom: 20px; }
+    a { color: #5e0000; font-weight: 500; }
+    a:hover { text-decoration: underline; }
     .stButton>button {
-        background-color: #5e0000;
-        color: white;
-        border: none;
-        border-radius: 6px;
-        padding: 0.6em 1.2em;
-        font-size: 16px;
-        font-weight: 600;
-        transition: 0.2s ease-in-out;
+        background-color: #5e0000; color: white; border: none; border-radius: 6px;
+        padding: 0.6em 1.2em; font-size: 16px; font-weight: 600;
     }
-    .stButton>button:hover {
-        background-color: #7b0000;
+    .stButton>button:hover { background-color: #7b0000; }
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-top: 1em;
+        margin-bottom: 1em;
+    }
+    th, td {
+        border: 1px solid #ddd;
+        padding: 10px;
+        text-align: center;
+    }
+    th {
+        background-color: #f2f2f2;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# ──────────────────────────────────────────────
-# 헤더: 연구실 정보 및 프로젝트 타이틀
-# ──────────────────────────────────────────────
+# 헤더
 st.image("signalLogo.png", width=360)
 st.markdown('<div class="title">Bitcoin Anomaly Detection Tool</div>', unsafe_allow_html=True)
 st.markdown('<div class="subtitle">고려대학교 정보보호학과 · Signal Research Lab</div>', unsafe_allow_html=True)
 st.markdown('<div class="badge">논문 기반 · 트랜잭션 흐름 분석 도구 · 실시간 이상 탐지</div>', unsafe_allow_html=True)
 st.markdown("[🌐 Signal Lab 홈페이지 바로가기](https://signal.korea.ac.kr/home)")
 
-st.info("이 도구는 '비트코인 범죄 유형별 지갑 네트워크의 거래 패턴 분석 및 시계열-토폴로지 기반 모델링' 논문을 기반으로 구축된 무료 공개 버전입니다. 정량화된 4가지 이상 거래 기준(랜섬웨어, 섹스토션, 텀블러, 협박 사기)을 실제 구현하여 시각화하지만, 이 버전은 무료 API 기반으로 작동하며 다음과 같은 한계가 존재합니다:")
+st.info("본 도구는 논문 '비트코인 범죄 유형별 지갑 네트워크의 거래 패턴 분석 및 시계열-토폴로지 기반 모델링'(2025)을 기반으로 구축되었습니다. 위험 판정은 정량적 기준에 따른 가능성 중심으로 구성되며, 점수와 해석은 참조 용도로 활용됩니다.")
 
-st.markdown("""
-- 📉 실시간 mempool 데이터 분석 불가
-- 🧩 토폴로지 기반의 네트워크 연결 관계 미포함
-- 🔕 알려진 블랙리스트 주소와의 연결성 탐색 제외
-- ⚠️ 일부 알려진 패턴(예: 저빈도 burst 계좌) 감지율 제한
-- 🔓 탐지 기준은 보수적이며 false-negative 가능성 존재
+st.divider()
 
-> 해당 한계는 고급 유료 버전에서 확장 구현될 예정입니다.
-""")
+# 입력
+st.markdown("### 📡 분석할 비트코인 주소를 입력하세요")
+address = st.text_input("예: 1BoatSLRHtKNngkdXEeobR76b53LETtpyT")
 
-# 추가 시각적 안내: 기준별 정상 vs 이상 흐름 예시 설명
-st.markdown("""
-### 📊 기준 예시 시각 안내
-
-| 기준 항목 | 정상 거래 흐름 예시 | 이상 거래 흐름 예시 |
-|-----------|------------------|---------------------|
-| 고빈도 전송 | 하루 3~4건 거래 분포 | 1분 내 3건 이상 집중 거래 |
-| 고액 이상치 | 일정한 송금액 범위 유지 |突발적 고액 전송 (예: 50배 초과) |
-| 텀블러 패턴 | 정기적인 입출금 또는 균일 간격 흐름 | 동일 금액 반복 후 급격한 시간 변동 |
-| 협박 사기 | 간헐적이고 장기 간격 거래 | 특정 시점 burst 이후 장시간 침묵 |
-
-> 이 도구는 위 기준을 기반으로 거래 흐름을 수치화하고 이상성을 시각적으로 표시합니다.
-""")
-
-
-# ──────────────────────────────────────────────
-# 언어 텍스트 정의 (단일 한국어 모드)
-# ──────────────────────────────────────────────
-L = {
-    "input_title": "### 📡 분석할 비트코인 주소를 입력하세요",
-    "input_placeholder": "예: 1BoatSLRHtKNngkdXEeobR76b53LETtpyT",
-    "button": "🔍 거래 흐름 분석 시작",
-    "fetch_fail": "❗ 트랜잭션을 불러오지 못했습니다. 주소를 다시 확인해주세요.",
-    "no_input": "💡 주소를 입력한 후 '분석 시작'을 눌러주세요.",
-    "tx_success": "총 {count}개의 트랜잭션을 수집했습니다.",
-    "section_scores": "📊 기준별 이상 탐지 결과",
-    "total_score": "🔐 총 위험 점수",
-    "most_match": "✅ 이 주소는 **{type}** 유형의 흐름과 가장 유사합니다.",
-    "no_match": "⚠️ 일치하는 범죄 유형이 발견되지 않았습니다.",
-    "time_chart": "⏱ 거래 시간축 흐름 시각화",
-    "tx_table": "📋 전체 전처리 트랜잭션",
-    "score_guide": "#### 📘 점수화 방식 설명\n각 항목별로 0~25점 범위의 위험 점수를 부여하며, 총합 100점을 기준으로 이상 가능성을 평가합니다.\n- 고빈도 반복 전송: 단위 시간 내 빈도 증가 여부 (ex. 1분 내 3건 이상)\n- 고액 이상치: z-score > 2.5 이상일 때 이상치로 판단\n- 텀블러: 동일 금액/간격 패턴 반복 + 급변 시 탐지\n- 협박 사기: 단기 burst 이후 장기 침묵 패턴 등"
-}
-
-# ──────────────────────────────────────────────
-# 주소 입력창
-# ──────────────────────────────────────────────
-st.markdown(L["input_title"])
-address = st.text_input(L["input_placeholder"])
-
-if st.button(L["button"]):
+if st.button("🔍 거래 흐름 분석 시작"):
     if address:
         tx_list = get_transactions(address)
         if tx_list:
-            st.success(L["tx_success"].format(count=len(tx_list)))
+            st.success(f"총 {len(tx_list)}개의 트랜잭션을 수집했습니다.")
 
+            # 분석
             df = preprocess(tx_list)
             freq_result = detect_high_frequency(df)
             freq_score = score_high_frequency(freq_result)
@@ -168,50 +107,62 @@ if st.button(L["button"]):
                 freq_score, amount_score, tumbler_score, extortion_score
             )
 
+            # 요약표 출력
             st.divider()
-            st.subheader(L["section_scores"])
+            st.subheader("📊 기준별 이상 탐지 요약")
 
-            col1, col2, col3, col4 = st.columns(4)
-            col1.metric("고빈도", f"{freq_score} / 25")
-            col2.metric("고액 이상", f"{amount_score} / 25")
-            col3.metric("텀블러", f"{tumbler_score} / 25")
-            col4.metric("협박 사기", f"{extortion_score} / 25")
+            table_html = f"""
+            <table>
+              <tr>
+                <th>분석 기준</th>
+                <th>점수 (0~25)</th>
+                <th>해석</th>
+              </tr>
+              <tr>
+                <td>고빈도</td>
+                <td>{freq_score}</td>
+                <td>{"✔️ 정상 범위" if freq_score <= 5 else "⚠️ 반복 흐름 있음"}</td>
+              </tr>
+              <tr>
+                <td>고액 이상</td>
+                <td>{amount_score}</td>
+                <td>{"✔️ 안정적 분포" if amount_score <= 5 else "⚠️ 일시적 비정상 금액 감지"}</td>
+              </tr>
+              <tr>
+                <td>텀블러</td>
+                <td>{tumbler_score}</td>
+                <td>{"✔️ 단조 흐름" if tumbler_score <= 5 else "⚠️ 패턴 반복 및 급변 추정"}</td>
+              </tr>
+              <tr>
+                <td>협박 사기</td>
+                <td>{extortion_score}</td>
+                <td>{"✔️ 안정 간격" if extortion_score <= 5 else "⚠️ 집중 후 장기 침묵 가능성"}</td>
+              </tr>
+            </table>
+            """
+            st.markdown(table_html, unsafe_allow_html=True)
 
-            st.metric(L["total_score"], f"{total_score} / 100")
-            st.plotly_chart(plot_risk_scores({
-                "고빈도": freq_score,
-                "고액 이상": amount_score,
-                "텀블러": tumbler_score,
-                "협박 사기": extortion_score
-            }), use_container_width=True)
+            # 총합 및 해석
+            st.metric("🔐 총 위험 점수", f"{total_score} / 100")
 
-            pattern_scores = {
-                '🛑 랜섬웨어': int(ransomware_hits),
-                '🚨 섹스토션': int(sextortion_hits),
-                '🔁 텀블러': int(tumbler_score),
-                '📦 협박 사기': int(extortion_score)
-            }
-            pattern_scores = {k: v for k, v in pattern_scores.items() if v > 0}
-
-            st.subheader("🧠 범죄 흐름 자동 분류 결과")
-            if pattern_scores:
-                most_likely = max(pattern_scores, key=pattern_scores.get)
-                st.success(L["most_match"].format(type=most_likely))
+            if total_score <= 30:
+                st.success("✔️ 전체적으로 정상 범위에 해당하며, 현재까지 이상 징후는 확인되지 않았습니다.")
+            elif total_score <= 70:
+                st.warning("⚠️ 일부 항목에서 유사한 흐름이 감지되었으며, 상황에 따라 참고가 필요할 수 있습니다.")
             else:
-                st.info(L["no_match"])
+                st.error("🚨 복수 항목에서 이상 흐름이 확인되었으며, 관련 거래 내역 확인이 권장됩니다.")
 
-            st.subheader(L["time_chart"])
+            # 시각화
+            st.subheader("⏱ 거래 시간축 흐름 시각화")
             st.plotly_chart(
                 plot_transaction_timeline(freq_result, anomaly_col='high_freq_flag'),
                 use_container_width=True
             )
 
-            st.subheader(L["tx_table"])
+            # 전처리 트랜잭션 테이블
+            st.subheader("📋 전체 전처리 트랜잭션")
             st.dataframe(df)
-
-            st.divider()
-            st.markdown(L["score_guide"])
         else:
-            st.warning(L["fetch_fail"])
+            st.warning("❗ 트랜잭션을 불러오지 못했습니다. 주소를 다시 확인해주세요.")
     else:
-        st.info(L["no_input"])
+        st.info("💡 주소를 입력한 후 '분석 시작'을 눌러주세요.")
