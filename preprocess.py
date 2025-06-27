@@ -1,6 +1,7 @@
 # 데이터 전처리 및 정제
 
 import pandas as pd
+from dateutil.parser import parse
 
 def preprocess(tx_list):
     """
@@ -11,9 +12,17 @@ def preprocess(tx_list):
     
     df = pd.DataFrame(tx_list)
 
-    # 날짜 문자열 → datetime 형식 변환
+    # 날짜 문자열 → datetime 변환 (Z 포함 안전 처리)
+    def safe_parse(ts):
+        try:
+            return parse(ts)
+        except:
+            return pd.NaT
+
     if 'confirmed' in df.columns:
-        df['confirmed'] = pd.to_datetime(df['confirmed'], utc=True)
+        df['confirmed'] = df['confirmed'].apply(safe_parse)
+        df = df[df['confirmed'].notna()]  # NaT 제거
+        df = df.sort_values(by='confirmed').reset_index(drop=True)
 
     # 사토시 → BTC 변환
     if 'value' in df.columns:
