@@ -118,20 +118,23 @@ with st.expander("🛡 블랙리스트 출처 보기"):
 
 sanctioned = load_sanctioned_addresses()
 address = st.text_input("📡 분석할 비트코인 주소를 입력하세요")
-tx_json = get_transactions(address)
 if st.button("🔍 거래 흐름 분석 시작"):
-    if not address:
+    if not address or address.strip() == "":
         st.info("💡 주소를 입력한 후 '분석 시작'을 눌러주세요.")
+
+    elif not address.startswith("1") and not address.startswith("3") and not address.startswith("bc1"):
+        st.warning("⚠️ 유효한 비트코인 주소 형식이 아닙니다.")
+
     elif address in sanctioned:
         st.error("🚨 이 주소는 블랙리스트에 포함된 고위험 주소입니다.")
         st.warning("이 주소는 OFAC 등에서 확인된 위협 또는 제재 대상입니다.")
         st.metric("📌 최종 위험 점수", "100 / 100")
     else:
-        tx_list = get_transactions(address)
-        if not tx_list or "txs" not in tx_json:
+        tx_json = get_transactions(address)
+        if not tx_json or "txs" not in tx_json:
             st.warning("❗ 트랜잭션을 불러오지 못했습니다. 주소를 다시 확인해주세요.")
         else:
-            st.success(f"총 {len(tx_list)}개의 트랜잭션을 수집했습니다.")
+            st.success(f"총 {len(tx_json)}개의 트랜잭션을 수집했습니다.")
 
 
             # 전처리 진행
