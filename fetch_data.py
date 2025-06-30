@@ -8,7 +8,8 @@ import json
 
 # 환경변수 로딩
 load_dotenv()
-token = os.getenv("BLOCKCYPHER_TOKEN")
+token = os.getenv("BLOCKCYPHER_TOKEN") or "93464419740141a7b00fbcb440e65595"
+
 def get_transactions(address, limit=50):
     """
     주어진 비트코인 주소의 전체 트랜잭션 리스트 (inputs/outputs 포함)를 BlockCypher API로부터 가져옴
