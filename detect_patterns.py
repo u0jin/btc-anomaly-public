@@ -2,20 +2,23 @@ import pandas as pd
 import streamlit as st
 
 # 이상 탐지 1: 고빈도 반복 전송 (기준 완화)
-def detect_high_frequency(df, threshold_per_min=2):
-    if df.empty or 'confirmed' not in df.columns or 'tx_hash' not in df.columns:
-        df['high_freq_flag'] = False
-        return df
+def detect_high_frequency(df):
+    # 안전하게 날짜 변환
+    if 'confirmed' not in df.columns:
+        raise ValueError("❗ 'confirmed' 컬럼이 존재하지 않습니다.")
 
-    df = df.sort_values('confirmed')
-    df['confirmed'] = pd.to_datetime(df['confirmed'])
+    df['confirmed'] = pd.to_datetime(df['confirmed'], errors='coerce')
+    df = df.dropna(subset=['confirmed'])
 
-    df.set_index('confirmed', inplace=True)
-    rolling_count = df['tx_hash'].resample('1min').count()
-    df['rolling_count'] = rolling_count.reindex(df.index, method='ffill').fillna(0)
+    df = df.sort_values(by='confirmed')
+    df['time_diff'] = df['confirmed'].diff().dt.total_seconds().fillna(0)
 
-    df['high_freq_flag'] = df['rolling_count'] > threshold_per_min
-    df.reset_index(inplace=True)
+    # 기준 시간보다 짧은 간격 필터링
+    threshold = 60  # 예: 60초 이내 반복 전송
+    suspicious = df[df['time_diff'] < threshold]
+
+    score = min(25, len(suspicious))  # 점수 제한
+    df['freq_score'] = score
     return df
 
 # 이상 탐지 2: 고액 이상치 전송 (기준 완화)
