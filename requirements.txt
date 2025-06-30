@@ -3,3 +3,4 @@ pandas
 plotly
 requests
 python-dotenv
+networkx
